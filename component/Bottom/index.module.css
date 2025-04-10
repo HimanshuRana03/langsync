@@ -1,0 +1,25 @@
+.bottomMenu {
+    position: absolute;
+    display: flex;
+    justify-content: space-between;
+    bottom: 20px;      
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: 300px;
+  }
+  
+  .bottomMenu .icon {
+    padding: 16px;      
+    border-radius: 9999px; 
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    background-color: rgb(5, 220, 5); 
+  }
+  
+  .bottomMenu .icon:hover,
+  .bottomMenu .icon.active {
+    background-color: red; 
+  }
+  

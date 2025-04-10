@@ -1,0 +1,38 @@
+.playerContainer {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.25rem; 
+  height: 100%;
+}
+
+.active {
+  border-radius: 0.5rem;
+  
+}
+
+.notActive {
+  border-radius: 0.375rem; 
+  
+  height: min-content;
+  width: 200px;
+  -webkit-box-shadow: 0px 0px 11px -1px rgba(0, 0, 0, 0.75);
+  -moz-box-shadow: 0px 0px 11px -1px rgba(0, 0, 0, 0.75);
+  box-shadow: 0px 0px 11px -1px rgba(0, 0, 0, 0.75);
+}
+
+.icon {
+  color: white;
+  position: absolute;
+  right: 0.5rem;  
+  bottom: 0.5rem; 
+}
+
+.user {
+  color: white;
+}
+
+.notPlaying {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
