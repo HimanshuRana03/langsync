@@ -9,10 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "classnames": "^2.5.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.487.0",
+    "mongoose": "^8.13.2",
     "next": "13.5.8",
+    "next-auth": "^4.24.11",
     "peerjs": "^1.5.4",
     "react": "^18",
     "react-dom": "^18",
