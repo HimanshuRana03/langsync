@@ -22,4 +22,21 @@
   .bottomMenu .icon.active {
     background-color: red; 
   }
+  .active {
+    color: red;
+  }
+  .notificationDot {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    background-color: red;
+    border-radius: 50%;
+    border: 2px solid white; /* Optional: makes it stand out */
+    animation: pulse 1s infinite;
+  }
+  .chatWrapper {
+    position: relative;
+  }
   

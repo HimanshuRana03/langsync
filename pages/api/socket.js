@@ -30,7 +30,9 @@ const SocketHandler = (req, res) => {
                 socket.join(roomId)           
                 socket.broadcast.to(roomId).emit('user-leave', userId)   
             });
-
+            socket.on("chat-message", ({ roomId, message }) => {
+                socket.to(roomId).emit("chat-message", { message });
+              });
         })
     }
     res.end();

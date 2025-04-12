@@ -1,17 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { cloneDeep } from "lodash";
-
 import { useSocket } from "@/context/socket";
 import usePeer from "@/hooks/usePeer";
 import useMediaStream from "@/hooks/useMediaStream";
 import usePlayer from "@/hooks/usePlayer";
-
 import Player from "@/component/Player";
 import Bottom from "@/component/Bottom";
-
+import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 
 import styles from "@/styles/room.module.css";
-import { useRouter } from "next/router";
 
 const Room = () => {
   const socket = useSocket();
@@ -28,17 +26,56 @@ const Room = () => {
     leaveRoom
   } = usePlayer(myId, roomId, peer);
 
-  const [users, setUsers] = useState([])
+  const { data: session } = useSession();
+
+  const [users, setUsers] = useState([]);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [newMsg, setNewMsg] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
+  const chatRef = useRef(null);
+
+  const toggleChat = () => {
+    setChatOpen((prev) => {
+      if (!prev) setShowNotification(false);
+      return !prev;
+    });
+  };
+
+  const sendMessage = () => {
+    if (newMsg.trim()) {
+      const message = {
+        sender: session?.user?.name || "Anonymous",
+        content: newMsg,
+        timestamp: Date.now(),
+      };
+      socket.emit("chat-message", { roomId, message });
+      setMessages((prev) => [...prev, message]);
+      setNewMsg("");
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleIncomingMessage = ({ message }) => {
+      setMessages((prev) => [...prev, message]);
+      if (!chatOpen) setShowNotification(true);
+    };
+    socket.on("chat-message", handleIncomingMessage);
+    return () => {
+      socket.off("chat-message", handleIncomingMessage);
+    };
+  }, [socket, chatOpen]);
+
+  useEffect(() => {
+    chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
+  }, [messages]);
 
   useEffect(() => {
     if (!socket || !peer || !stream) return;
     const handleUserConnected = (newUser) => {
-      console.log(`user connected in room with userId ${newUser}`);
-
       const call = peer.call(newUser, stream);
-
       call.on("stream", (incomingStream) => {
-        console.log(`incoming stream from ${newUser}`);
         setPlayers((prev) => ({
           ...prev,
           [newUser]: {
@@ -47,15 +84,10 @@ const Room = () => {
             playing: true,
           },
         }));
-
-        setUsers((prev) => ({
-          ...prev,
-          [newUser]: call
-        }))
+        setUsers((prev) => ({ ...prev, [newUser]: call }));
       });
     };
     socket.on("user-connected", handleUserConnected);
-
     return () => {
       socket.off("user-connected", handleUserConnected);
     };
@@ -64,30 +96,25 @@ const Room = () => {
   useEffect(() => {
     if (!socket) return;
     const handleToggleAudio = (userId) => {
-      console.log(`user with id ${userId} toggled audio`);
       setPlayers((prev) => {
         const copy = cloneDeep(prev);
         copy[userId].muted = !copy[userId].muted;
         return { ...copy };
       });
     };
-
     const handleToggleVideo = (userId) => {
-      console.log(`user with id ${userId} toggled video`);
       setPlayers((prev) => {
         const copy = cloneDeep(prev);
         copy[userId].playing = !copy[userId].playing;
         return { ...copy };
       });
     };
-
     const handleUserLeave = (userId) => {
-      console.log(`user ${userId} is leaving the room`);
-      users[userId]?.close()
+      users[userId]?.close();
       const playersCopy = cloneDeep(players);
       delete playersCopy[userId];
       setPlayers(playersCopy);
-    }
+    };
     socket.on("user-toggle-audio", handleToggleAudio);
     socket.on("user-toggle-video", handleToggleVideo);
     socket.on("user-leave", handleUserLeave);
@@ -101,11 +128,9 @@ const Room = () => {
   useEffect(() => {
     if (!peer || !stream) return;
     peer.on("call", (call) => {
-      const { peer: callerId } = call;
+      const callerId = call.peer;
       call.answer(stream);
-
       call.on("stream", (incomingStream) => {
-        console.log(`incoming stream from ${callerId}`);
         setPlayers((prev) => ({
           ...prev,
           [callerId]: {
@@ -114,18 +139,13 @@ const Room = () => {
             playing: true,
           },
         }));
-
-        setUsers((prev) => ({
-          ...prev,
-          [callerId]: call
-        }))
+        setUsers((prev) => ({ ...prev, [callerId]: call }));
       });
     });
   }, [peer, setPlayers, stream]);
 
   useEffect(() => {
     if (!stream || !myId) return;
-    console.log(`setting my stream ${myId}`);
     setPlayers((prev) => ({
       ...prev,
       [myId]: {
@@ -162,12 +182,41 @@ const Room = () => {
           );
         })}
       </div>
+
+
+      <div className={`${styles.chatSection} ${chatOpen ? styles.chatOpen : ""}`}>
+        <div className={styles.chatHeader}>
+          <h3>Chat</h3>
+          <button className={styles.closeBtn} onClick={toggleChat}>X</button>
+        </div>
+        <div className={styles.chatMessages} ref={chatRef}>
+          {messages.map((msg, index) => (
+            <div key={index} className={styles.chatBubble}>
+              <strong>{msg.sender}:</strong> {msg.content}
+            </div>
+          ))}
+        </div>
+        <div className={styles.chatInputRow}>
+          <input
+            type="text"
+            className={styles.chatInput}
+            placeholder="Type a message..."
+            value={newMsg}
+            onChange={(e) => setNewMsg(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
+          <button onClick={sendMessage} className={styles.sendButton}>Send</button>
+        </div>
+      </div>
+
       <Bottom
         muted={playerHighlighted?.muted}
         playing={playerHighlighted?.playing}
         toggleAudio={toggleAudio}
         toggleVideo={toggleVideo}
         leaveRoom={leaveRoom}
+        toggleChat={toggleChat}
+        showNotification={showNotification}
       />
     </>
   );

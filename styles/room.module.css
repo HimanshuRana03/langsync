@@ -1,6 +1,6 @@
 .activePlayerContainer {
   position: absolute;
-  width: 75%; 
+  width: 70%; 
   left: 0;
   right: 0;
   margin-left: auto;
@@ -17,6 +17,80 @@
   overflow-y: auto;
   width: 200px;
   height: calc(100vh - 20px);
-  right: 20px;
+  left: 20px;
   top: 20px;
+}
+.chatSection {
+  position: fixed;
+  top: 0;
+  right: -30%;
+  width: 20%;
+  height: 100%;
+  background: #343434;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  transition: right 0.3s ease;
+  z-index: 1000;
+  border-left: 2px solid #333;
+}
+
+
+.chatOpen {
+  right: 0;
+}
+
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+}
+
+.chatMessages {
+  flex: 1;
+  overflow-y: auto;
+  margin: 1rem 0;
+}
+
+.chatBubble {
+  background: #424242;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+}
+.chatInputRow {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.chatInput {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: none;
+}
+
+.sendButton, .closeBtn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.chatWrapper {
+  position: relative;
+}
+
+.notificationDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 10px;
+  width: 10px;
+  background: white;
+  border-radius: 50%;
 }
