@@ -19,6 +19,7 @@
     "next-auth": "^4.24.11",
     "peerjs": "^1.5.4",
     "react": "^18",
+    "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^18",
     "react-player": "^2.16.0",
     "socket.io": "^4.8.1",

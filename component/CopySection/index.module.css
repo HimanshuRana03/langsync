@@ -1,0 +1,27 @@
+.copyContainer {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    color: white;
+    border: 1px solid white;
+    border-radius: 0.25rem; 
+    padding: 0.5rem; 
+    left: 30px;
+    bottom: 100px;
+  }
+  
+  .copyContainer hr {
+    margin-top: 0.25rem; 
+    margin-bottom: 0.25rem;
+  }
+  
+  .copyContainer .copyHeading {
+    font-size: 1rem; 
+  }
+  
+  .copyContainer .copyDescription {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem; 
+  }
+  

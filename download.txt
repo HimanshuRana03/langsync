@@ -1,0 +1,27 @@
+1)import server from socketio 
+npm install socket.io socket.io-client
+
+2)setup peerjs
+npm i peerjs
+//install globally
+npm install -g peerjs
+
+//start peer server in other terminal
+peerjs --port 3001
+
+3)install uuid
+npm install uuid
+
+4)media stream setup
+npm i react-player
+
+
+5)styling player
+npm i lodash
+
+npm i classnames
+
+6)control panels
+npm install lucide-react
+
+npm install --save react-copy-to-clipboard

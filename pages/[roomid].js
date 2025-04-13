@@ -8,7 +8,7 @@ import Player from "@/component/Player";
 import Bottom from "@/component/Bottom";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-
+import CopySection from "@/component/CopySection";
 import styles from "@/styles/room.module.css";
 
 const Room = () => {
@@ -208,7 +208,7 @@ const Room = () => {
           <button onClick={sendMessage} className={styles.sendButton}>Send</button>
         </div>
       </div>
-
+          <CopySection roomId={roomId}/>
       <Bottom
         muted={playerHighlighted?.muted}
         playing={playerHighlighted?.playing}
