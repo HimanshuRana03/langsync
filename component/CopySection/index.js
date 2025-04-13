@@ -20,4 +20,4 @@ const CopySection = (props) => {
   );
 };
 
-export default CopySection;
+export default CopySection; 
