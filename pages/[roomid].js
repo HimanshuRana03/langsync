@@ -16,6 +16,10 @@ const Room = () => {
   const { roomId } = useRouter().query;
   const { peer, myId } = usePeer();
   const { stream } = useMediaStream();
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimeoutRef = useRef(null);
   const {
     players,
     setPlayers,
@@ -23,7 +27,7 @@ const Room = () => {
     nonHighlightedPlayers,
     toggleAudio,
     toggleVideo,
-    leaveRoom
+    leaveRoom,
   } = usePlayer(myId, roomId, peer);
 
   const { data: session } = useSession();
@@ -47,6 +51,7 @@ const Room = () => {
       const message = {
         sender: session?.user?.name || "Anonymous",
         content: newMsg,
+        type: "text",
         timestamp: Date.now(),
       };
       socket.emit("chat-message", { roomId, message });
@@ -54,10 +59,76 @@ const Room = () => {
       setNewMsg("");
     }
   };
+  const toggleVoiceRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current.stop();
+      clearTimeout(recordingTimeoutRef.current);
+      setIsRecording(false);
+      return;
+    }
+  
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      alert("Voice recording not supported in this browser.");
+      return;
+    }
+  
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+  
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+  
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (audioBlob.size === 0) return;
+
+        audioBlob.arrayBuffer().then((buffer) => {
+          const voiceMessage = {
+            sender: session?.user?.name || "Anonymous",
+            content: buffer,
+            type: "audio",
+            timestamp: Date.now(),
+          };
+          socket.emit("chat-message", { roomId, message: voiceMessage });
+          const localURL = URL.createObjectURL(audioBlob);
+          setMessages((prev) => [
+            ...prev,
+            {
+              ...voiceMessage,
+              content: localURL,
+            },
+          ]);
+        });
+      };
+  
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      recordingTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+          setIsRecording(false);
+        }
+      }, 120000);
+    } catch (err) {
+      console.error("Error starting voice recording:", err);
+    }
+  };
 
   useEffect(() => {
     if (!socket) return;
     const handleIncomingMessage = ({ message }) => {
+      if (message.type === "audio" && message.content instanceof ArrayBuffer) {
+        const blob = new Blob([message.content], { type: "audio/webm" });
+        const audioURL = URL.createObjectURL(blob);
+        message.content = audioURL;
+      }
+
       setMessages((prev) => [...prev, message]);
       if (!chatOpen) setShowNotification(true);
     };
@@ -183,16 +254,24 @@ const Room = () => {
         })}
       </div>
 
-
-      <div className={`${styles.chatSection} ${chatOpen ? styles.chatOpen : ""}`}>
+      <div
+        className={`${styles.chatSection} ${chatOpen ? styles.chatOpen : ""}`}
+      >
         <div className={styles.chatHeader}>
           <h3>Chat</h3>
-          <button className={styles.closeBtn} onClick={toggleChat}>X</button>
+          <button className={styles.closeBtn} onClick={toggleChat}>
+            X
+          </button>
         </div>
         <div className={styles.chatMessages} ref={chatRef}>
           {messages.map((msg, index) => (
             <div key={index} className={styles.chatBubble}>
-              <strong>{msg.sender}:</strong> {msg.content}
+              <strong>{msg.sender}:</strong>{" "}
+              {msg.type === "audio" ? (
+                <audio controls src={msg.content} />
+              ) : (
+                msg.content
+              )}
             </div>
           ))}
         </div>
@@ -205,10 +284,20 @@ const Room = () => {
             onChange={(e) => setNewMsg(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           />
-          <button onClick={sendMessage} className={styles.sendButton}>Send</button>
+          <button onClick={sendMessage} className={styles.sendButton}>
+            Send
+          </button>
+          <button
+            onClick={toggleVoiceRecording}
+            className={`${styles.voiceButton} ${
+              isRecording ? styles.recording : ""
+            }`}
+          >
+            {isRecording ? "⏹ Stop" : "🎤 Record"}
+          </button>
         </div>
       </div>
-          <CopySection roomId={roomId}/>
+      <CopySection roomId={roomId} />
       <Bottom
         muted={playerHighlighted?.muted}
         playing={playerHighlighted?.playing}

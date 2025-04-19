@@ -31,6 +31,7 @@ const SocketHandler = (req, res) => {
                 socket.broadcast.to(roomId).emit('user-leave', userId)   
             });
             socket.on("chat-message", ({ roomId, message }) => {
+                console.log(`[Server] Chat message received for room ${roomId}:`, message);
                 socket.to(roomId).emit("chat-message", { message });
               });
         })
