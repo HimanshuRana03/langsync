@@ -66,25 +66,32 @@ const Room = () => {
       setIsRecording(false);
       return;
     }
-  
+
     if (!navigator.mediaDevices || !window.MediaRecorder) {
       alert("Voice recording not supported in this browser.");
       return;
     }
-  
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack && !audioTrack.enabled) {
+        audioTrack.enabled = true;
+      }
+      toggleAudio(myId);
       const mediaRecorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
-  
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
-  
+
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
         if (audioBlob.size === 0) return;
 
         audioBlob.arrayBuffer().then((buffer) => {
@@ -104,8 +111,9 @@ const Room = () => {
             },
           ]);
         });
+        stream.getTracks().forEach((track) => track.stop());
       };
-  
+
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
