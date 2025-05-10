@@ -39,6 +39,18 @@ const Room = () => {
   const [showNotification, setShowNotification] = useState(false);
   const chatRef = useRef(null);
 
+  
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  useEffect(() => {
+    if (socket && roomId && myId && selectedLanguage) {
+      socket.emit("set-language", {
+        roomId,
+        userId: myId,
+        languageCode: selectedLanguage,
+      });
+    }
+  }, [socket, roomId, myId, selectedLanguage]);
   const toggleChat = () => {
     setChatOpen((prev) => {
       if (!prev) setShowNotification(false);
@@ -55,10 +67,18 @@ const Room = () => {
         timestamp: Date.now(),
       };
       socket.emit("chat-message", { roomId, message });
-      setMessages((prev) => [...prev, message]);
+
       setNewMsg("");
     }
   };
+
+  
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setSelectedLanguage(newLang);
+    socket.emit("set-language", { roomId,userId: myId, language: newLang });
+  };
+
   const toggleVoiceRecording = async () => {
     if (isRecording) {
       mediaRecorderRef.current.stop();
@@ -102,14 +122,6 @@ const Room = () => {
             timestamp: Date.now(),
           };
           socket.emit("chat-message", { roomId, message: voiceMessage });
-          const localURL = URL.createObjectURL(audioBlob);
-          setMessages((prev) => [
-            ...prev,
-            {
-              ...voiceMessage,
-              content: localURL,
-            },
-          ]);
         });
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -271,6 +283,24 @@ const Room = () => {
             X
           </button>
         </div>
+        <div className={styles.languageSelectRow}>
+          <label htmlFor="languageSelect">Translate to: </label>
+          <select
+            id="languageSelect"
+            value={selectedLanguage}
+            onChange={handleLanguageChange}
+            className={styles.languageSelect}
+          >
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="zh">Chinese</option>
+            <option value="hi">Hindi</option>
+            <option value="ar">Arabic</option>
+            
+          </select>
+        </div>
         <div className={styles.chatMessages} ref={chatRef}>
           {messages.map((msg, index) => (
             <div key={index} className={styles.chatBubble}>
@@ -278,7 +308,7 @@ const Room = () => {
               {msg.type === "audio" ? (
                 <audio controls src={msg.content} />
               ) : (
-                msg.content
+                <div>{msg.content}</div>
               )}
             </div>
           ))}

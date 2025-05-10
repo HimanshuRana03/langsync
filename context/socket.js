@@ -1,27 +1,38 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
+import { useSession } from "next-auth/react";
 
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
-    const socket = useContext(SocketContext)
-    return socket
-}
+  return useContext(SocketContext);
+};
 
-export const SocketProvider = (props) => {
-  const { children } = props;
+export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
-    const connection = io();
-    console.log("socket connection", connection)
-    setSocket(connection);
-  }, []);
+    if (!session?.user?.name) return;
 
-  socket?.on('connect_error', async (err) => {
-    console.log("Error establishing socket", err)
-    await fetch('/api/socket')
-  })
+    const connection = io({
+      query: {
+        userId: session.user.name, 
+      },
+    });
+
+    console.log("Socket connection established", connection);
+    setSocket(connection);
+
+    connection.on("connect_error", async (err) => {
+      console.error("Error establishing socket connection:", err);
+      await fetch("/api/socket");
+    });
+
+    return () => {
+      connection.disconnect();
+    };
+  }, [session?.user?.name]);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
