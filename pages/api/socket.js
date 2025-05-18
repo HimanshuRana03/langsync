@@ -108,7 +108,6 @@ const SocketHandler = async (req, res) => {
             timestamp: message.timestamp,
           };
 
-          
           await Room.updateOne(
             { roomId },
             { $push: { messages: storedMessage } },
@@ -116,36 +115,68 @@ const SocketHandler = async (req, res) => {
           );
 
           const roomDoc = await Room.findOne({ roomId });
-          
 
           for (const participant of roomDoc.participants) {
             const userId = participant.id;
-            
-            let contentToSend = storedMessage.content;
             const targetSocketId = userSocketMap[userId];
             const isSender = userId === storedMessage.sender;
-            if (
-              !isSender &&
-              storedMessage.type === "text" &&
-              participant.language
-            ){ 
-            try{
-              const translated = await translateText(
-                storedMessage.content,
-                participant.language
-              );
-              contentToSend=translated;
-            }catch (err) {
-              console.error(`Translation failed for ${userId}:`, err);
+
+            let contentToSend = storedMessage.content;
+
+            if (!isSender && participant.language) {
+              if (storedMessage.type === "text") {
+                try {
+                  const translated = await translateText(
+                    storedMessage.content,
+                    participant.language
+                  );
+                  contentToSend = translated;
+                } catch (err) {
+                  console.error(`Text translation failed for ${userId}:`, err);
+                }
+              }
+
+              if (storedMessage.type === "audio") {
+                try {
+                  
+                  const formData = new FormData();
+                  formData.append(
+                    "file",
+                    new Blob([storedMessage.content], { type: "audio/webm" }),
+                    "audio.webm"
+                  );
+
+                  const whisperRes = await fetch("http://localhost:8000/transcribe", {
+                    method: "POST",
+                    body: formData,
+                  });
+
+                  const whisperData = await whisperRes.json();
+
+                  if (whisperData?.text) {
+                    
+                    const translatedText = await translateText(
+                      whisperData.text,
+                      participant.language
+                    );
+
+                    contentToSend = {
+                      audio: storedMessage.content,
+                      translation: translatedText,
+                    };
+                  }
+                } catch (err) {
+                  console.error(`Audio transcription/translation failed for ${userId}:`, err);
+                }
+              }
             }
-          }
 
             
-            if (!isSender&&targetSocketId) {
+            if (!isSender && targetSocketId) {
               io.to(targetSocketId).emit("chat-message", {
                 message: {
                   ...storedMessage,
-                  content:contentToSend,
+                  content: contentToSend,
                 },
               });
             }
@@ -154,6 +185,7 @@ const SocketHandler = async (req, res) => {
           console.error("Error processing chat-message:", error);
         }
       });
+
     });
   }
 

@@ -39,7 +39,6 @@ const Room = () => {
   const [showNotification, setShowNotification] = useState(false);
   const chatRef = useRef(null);
 
-  
   const [selectedLanguage, setSelectedLanguage] = useState("en");
 
   useEffect(() => {
@@ -72,11 +71,10 @@ const Room = () => {
     }
   };
 
-  
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
-    socket.emit("set-language", { roomId,userId: myId, language: newLang });
+    socket.emit("set-language", { roomId, userId: myId, language: newLang });
   };
 
   const toggleVoiceRecording = async () => {
@@ -143,10 +141,17 @@ const Room = () => {
   useEffect(() => {
     if (!socket) return;
     const handleIncomingMessage = ({ message }) => {
-      if (message.type === "audio" && message.content instanceof ArrayBuffer) {
-        const blob = new Blob([message.content], { type: "audio/webm" });
-        const audioURL = URL.createObjectURL(blob);
-        message.content = audioURL;
+      if (message.type === "audio") {
+        if (message.content instanceof ArrayBuffer) {
+          const blob = new Blob([message.content], { type: "audio/webm" });
+          message.content = URL.createObjectURL(blob);
+        } else if (message.content?.audio instanceof ArrayBuffer) {
+          const blob = new Blob([message.content.audio], {
+            type: "audio/webm",
+          });
+          const audioURL = URL.createObjectURL(blob);
+          message.content.audio = audioURL;
+        }
       }
 
       setMessages((prev) => [...prev, message]);
@@ -297,16 +302,21 @@ const Room = () => {
             <option value="ru">Russian</option>
             <option value="es">Spanish</option>
             <option value="hi">Hindi</option>
-            
-            
           </select>
         </div>
         <div className={styles.chatMessages} ref={chatRef}>
           {messages.map((msg, index) => (
             <div key={index} className={styles.chatBubble}>
               <strong>{msg.sender}:</strong>{" "}
-              {msg.type === "audio" ? (
+              {msg.type === "audio" && typeof msg.content === "string" ? (
                 <audio controls src={msg.content} />
+              ) : msg.type === "audio" && msg.content?.audio ? (
+                <>
+                  <audio controls src={msg.content.audio} />
+                  <div className={styles.translatedText}>
+                    <em>Translation:</em> {msg.content.translation}
+                  </div>
+                </>
               ) : (
                 <div>{msg.content}</div>
               )}

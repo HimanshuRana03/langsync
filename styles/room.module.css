@@ -122,3 +122,8 @@
   padding: 4px 8px;
   font-size: 14px;
 }
+.translatedText {
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: white;
+}
