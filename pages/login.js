@@ -52,7 +52,7 @@ export default function Login() {
         />
         <button type="submit" className={styles.button}>Login</button>
         <div className={styles.link}>
-            <span className={styles.inside}>Does not have an account? <Link href="/register">Register</Link></span>
+            <span className={styles.inside}>Not Registered? <Link href="/register">Register</Link></span>
         </div>
       </form>
     </div>
